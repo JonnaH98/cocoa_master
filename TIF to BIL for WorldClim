@@ -1,0 +1,16 @@
+#Most packages use .BIL file format to handle WorldClim data (biocliamtic variables), this code changes the .TIF format to .BIL format. Important note: Only use this once
+
+
+#Set directory to folder with the bioclimatic variables downloaded from WorldClim
+setwd ("C:/Users/jonna/OneDrive/Dokument/R/wc2.1_2.5m_bio")              
+
+#List all .bil files
+var <- list.files (pattern=".tif")
+
+#Change from .tif to .bil for each file in var
+lapply(var, function(x) { 
+  r = raster(x)
+  name = file_path_sans_ext(x)
+  writeRaster(r, paste(name, ".bil", sep=""))
+})
+
