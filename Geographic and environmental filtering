@@ -94,7 +94,7 @@ if(!require(raster)) install.packages("raster") else library(raster)
 if(!require(tools)) install.packages("tools") else library(tools)
 
 setwd ("C:/Users/jonna/OneDrive/Dokument/R")
-occurence <- paste(system.file(package="dismo"), 'Acacia Mangium.csv', sep='')
+occurence <- paste( 'Acacia Mangium.csv', sep='')
 bradypus <- read.csv(occurence,header = T, sep = ";")
 bradypus
 coord<- as.data.frame(bradypus[,c(1:2)])
@@ -106,3 +106,7 @@ data<- extract(wc, coord)
 data<- as.data.frame (data)
 
 envSample (coord, filters=list (data$wc2.1_2.5m_bio_1, data$wc2.1_2.5m_bio_12), res=list (20, 200), do.plot=TRUE)
+
+
+
+
