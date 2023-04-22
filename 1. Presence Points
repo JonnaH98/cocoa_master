@@ -1,0 +1,52 @@
+#This code downloads presence points for the selected species from GBIF and BIEN. Note that keys must first be generated for GBIF, this was done on their webpage
+#beforehand
+
+if(!require(rgbif)) install.packages("rgbif") else library(rgbif)
+if(!require(BIEN)) install.packages("BIEN") else library(BIEN)
+if(!require(writexl)) install.packages("writexl") else library(writexl)
+
+
+#Get points from BIEN and save to a new excel file
+species_vector<-c("Terminalia superba","Cleistopholis patens","Terminalia ivorensis","Milicia excelsa","Morinda lucida","Antiaris toxicaria","Khaya senegalensis","Pycnanthus angolensis","Holarrhena floribunda","Cedrela odorata","Triplochitin scleroxylon","Ceiba pentandra","Entandrophragma angolense","Petersianthus macrocarpus","Daniellia ogea","Pouteria altissima","Amphimas pterocarpoides","Veronica conferta","Antrocaryon micraster","Ceiba pentandra","Albizia ferruginea","Alstonia boonei","Blighia sapida","Entandrophragma cylindricum","Albizia zygia","Piptadeniastrum africanum","Heritiera utilis","Celtis mildbraedii","Nesogordonia papaverifera","Ricinodendron heudelotii","Dissotis rotundifolia","Tieghemella heckelii"
+)
+BIEN_result <- BIEN_occurrence_species(species_vector)
+write_xlsx(BIEN_result,"BIEN_result.xlsx")
+
+
+#Get points from GBIF
+#NOTE: Run the code in segments according to the following steps:
+
+#STEP 1: Start the download
+res <- occ_download(
+  pred_in("taxonKey", c(3189393,3153999,3189389,3763589,5339834,7262663,3190508,8025076,3169751,3190511,3671814,5406697,3851018,3083150,2948722,2884205,2952803,3732603,3660638,5406697,2973196,5535759,3189955,3850935,2973160,2945196,3668686,4159999,3670970,3071632,3188496,5333452
+)), pred("hasCoordinate", TRUE), pred_within("POLYGON((-17 4, 15 4, 15 14, -17 14, -17 4))"), body = NULL,
+type = "and",
+format = "SIMPLE_CSV",
+user = "jonna98", 
+pwd = "gaYaqPg6aYjt_fJ", 
+email = "jonna.halonen98@gmail.com",
+curlopts = list()
+) 
+
+#Wait for code to finish running
+
+#Step 2: See how the download is going by writing "res"
+res
+
+#Step 3: Step 2 will show you how to see the status of the download and when this is complete you can download using the following code:
+
+d <- occ_download_get('0184617-230224095556074') %>%
+  occ_download_import()
+
+
+#Note: Remember to save the citation info shown from GBIF when running the code
+
+#Citation Info:  
+ # Please always cite the download DOI when using this data.
+#https://www.gbif.org/citation-guidelines
+#DOI: 10.15468/dl.gkxnqr
+#Citation:
+ # GBIF Occurrence Download https://doi.org/10.15468/dl.gkxnqr Accessed from R via rgbif (https://github.com/ropensci/rgbif) on 2023-04-22
+
+
+
