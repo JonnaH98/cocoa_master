@@ -1,0 +1,64 @@
+if(!require(terra)) install.packages("terra") else library(terra)
+if(!require(raster)) install.packages("raster") else library(raster)
+if(!require(BiodiversityR)) install.packages("BiodiversityR") else  library(BiodiversityR)
+if(!require(maxnet)) install.packages("maxnet") else library(maxnet)
+if(!require(maxlike)) install.packages("maxlike") else library(maxlike)
+if(!require(party)) install.packages("party") else library(party)
+if(!require(dismo)) install.packages("dismo") else library(dismo)
+if(!require(tidyverse)) install.packages("tidyverse") else library(tidyverse)
+if(!require(magrittr)) install.packages("magrittr") else library(magrittr)
+if(!require(sp)) install.packages("sp") else library(sp)
+if(!require(writexl)) install.packages("writexl") else library(writexl)
+
+
+#Read presence points
+setwd ("C:/Users/jonna/OneDrive/Dokument/R")
+
+occurence <- paste( 'PresencePointsGeoFilter.csv', sep='')
+occurencecsv <- read.csv(occurence,header = T, sep = ";")
+coord<- as.data.frame(occurencecsv[,c(1:3)])
+
+#Read bioclim data
+setwd ("C:/Users/jonna/OneDrive/Dokument/R/wc2.1_2.5m_bio")
+listbioclim <- list.files (pattern=".bil")
+bioclim<- rast(listbioclim)
+
+#Set area being looked at and its projection
+westafrica <- extent(-16, 17, 1, 14)
+myproj <- "+proj=longlat +datum=WGS84"
+
+#Set bioclim data to the desired area
+crs(bioclim) <- myproj
+bioclim <- crop(bioclim, westafrica) 
+bioclim <- stack(bioclim)
+
+
+#Get list of unique species name
+
+listofspecies <- sort(unique(coord$species))
+
+
+filteredpoints = data.frame(matrix(nrow = 0, ncol = 3))
+
+for (i in listofspecies ) {
+  
+  coordtemp = coord[coord$species == i,]
+  
+  if (nrow(coordtemp) >= 60) {
+    #environmental filtering
+    
+    
+    env.thin <- ensemble.environmentalThin(coordtemp[,c(2,3)], predictors.stack=bioclim, thin.n=60, pca.var = 0.95, return.notRetained=F)
+ 
+    env.thin <- cbind(species = i, env.thin)
+    
+    filteredpoints <- rbind(filteredpoints, env.thin[,c(1,2,3)])
+  }
+  
+  
+  print (i) #used to check which species is was most recently filtered as the program is slow
+  
+}
+
+
+write_xlsx(filteredpoints,"PresencePointsEnvFilter.xlsx")
