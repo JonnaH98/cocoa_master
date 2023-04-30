@@ -1,0 +1,220 @@
+
+if(!require(terra)) install.packages("terra") else library(terra)
+if(!require(raster)) install.packages("raster") else library(raster)
+if(!require(BiodiversityR)) install.packages("BiodiversityR") else  library(BiodiversityR)
+if(!require(maxnet)) install.packages("maxnet") else library(maxnet)
+if(!require(maxlike)) install.packages("maxlike") else library(maxlike)
+if(!require(party)) install.packages("party") else library(party)
+if(!require(dismo)) install.packages("dismo") else library(dismo)
+if(!require(gdalUtils)) install.packages("gdalUtils") else library(gdalUtils)
+if(!require(tidyverse)) install.packages("tidyverse") else library(tidyverse)
+if(!require(magrittr)) install.packages("magrittr") else library(magrittr)
+if(!require(sp)) install.packages("sp") else library(sp)
+if(!require(dismo)) install.packages("dismo") else library(dismo)
+if(!require(raster)) install.packages("raster") else library(raster)
+if(!require(maptools)) install.packages("maptools") else library(maptools)
+if(!require(rgeos)) install.packages("rgeos") else library(rgeos)
+if(!require(rJava)) install.packages("rJava") else library(rJava)
+if(!require(rgdal)) install.packages("rgdal") else library(rgdal)
+if(!require(geosphere)) install.packages("geosphere") else library(geosphere)
+if(!require(maps)) install.packages("maps") else  library(maps)
+if(!require(alphahull)) install.packages("alphahull") else library(alphahull)
+if(!require(tm)) install.packages("tm") else  library(tm)
+if(!require(maxent)) install.packages("maxent") else library(maxent)
+if(!require(gbm)) install.packages("gbm") else library(gbm)
+if(!require(gam)) install.packages("gam") else library(gam)
+if(!require(earth)) install.packages("earth") else library(earth)
+if(!require(vegan)) install.packages("vegan") else library(vegan)
+if(!require(MASS)) install.packages("MASS") else library(MASS)
+if(!require(mgcv)) install.packages("mgcv") else library(mgcv)
+if(!require(cluster)) install.packages("cluster") else library(cluster)
+if(!require(rpart)) install.packages("rpart") else  library(rpart)
+if(!require(effects)) install.packages("effects") else library(effects)
+if(!require(multcomp)) install.packages("multcomp") else library(multcomp)
+if(!require(ellipse)) install.packages("ellipse") else library(ellipse)
+if(!require(maptree)) install.packages("maptree") else library(maptree)
+if(!require(splancs)) install.packages("splancs") else library(splancs)
+if(!require(spatial)) install.packages("spatial") else library(spatial)
+if(!require(akima)) install.packages("akima") else library(akima)
+if(!require(nnet)) install.packages("nnet") else library(nnet)
+if(!require(randomForest)) install.packages("randomForest") else library(randomForest)
+if(!require(mda)) install.packages("mda") else library(mda)
+if(!require(kernlab)) install.packages("kernlab") else library(kernlab)
+if(!require(e1071)) install.packages("e1071") else library(e1071)
+if(!require(sem)) install.packages("sem") else library(sem)
+if(!require(car)) install.packages("car") else library(car)
+if(!require(maxlike)) install.packages("maxlike") else library(maxlike)
+if(!require(glmnet)) install.packages("glmnet") else library(glmnet)
+if(!require(PresenceAbsence)) install.packages("PresenceAbsence") else library(PresenceAbsence)
+if(!require(tcltk2)) install.packages("tcltk2") else library(tcltk2)
+if(!require(BiodiversityR)) install.packages("BiodiversityR") else  library(BiodiversityR)
+if(!require(writexl)) install.packages("writexl") else library(writexl)
+
+#Read presence points and get list of species
+setwd ("C:/Users/jonna/OneDrive/Dokument/R")           #########################################Change directory
+
+occurence <- paste( 'PresencePointsEnvFilterNoCleiHet.csv', sep='')
+occurencecsv <- read.csv(occurence,header = T, sep = ";")
+coord<- as.data.frame(occurencecsv[,c(1:3)])
+
+listofspecies <- sort(unique(coord$species))
+
+
+#Set area being looked at and its projection
+westafrica <- extent(-16, 17, 1, 14)
+myproj <- "+proj=longlat +datum=WGS84"
+
+
+#Administrative boundries of selected countries in West Africa
+WA_countries <- "C:/Users/jonna/Documents/WA_countries.shp"
+WA_countries <- readOGR(WA_countries) 
+WA_countries <- raster::crop(WA_countries, westafrica)
+
+
+#set directory to where all gcm maps are
+
+setwd ("C:/Users/jonna/OneDrive/Dokument/R/Future/ensembles/presence") 
+
+
+#Define pathways and GCMs
+SSP <- c("ssp126","ssp585")
+gcm1 <- "ACCESS-CM2"
+gcm3 <- c("EC-Earth3-Veg", "EC-Earth3-Veg-LR", "IPSL-CM6A-LR") #exclude "BCC-CSM2-MR"
+
+
+#Dataframe to store cell values
+cell_names = c("species","Scenario", "0", "1")
+cell_values = data.frame(matrix(nrow = 0, ncol = 4))
+colnames(cell_values) = cell_names
+
+#Create new baseline and future raster layers where they have been cropped for WA countries and GCMs have been merge for future
+
+for (i in listofspecies) {
+  
+  #include baseline into cell_values
+  baseline <- paste0("C:/Users/jonna/OneDrive/Dokument/R/Future/ensembles/presence/", i, "_bioclim.tif")
+  baseline <- raster::stack(baseline)
+  
+  
+  baseline <- crop(baseline, extent(WA_countries)) ## crop and mask for WA countries
+  baseline <- mask(baseline, WA_countries)
+  
+  cell_values[nrow(cell_values) + 1,] = c(i, "baseline",freq(baseline, value =0), freq(baseline, value =1))
+  
+  #save raster with new extent for baseline
+  writeRaster(baseline, filename=paste0(i, "_Baseline.grd"), overwrite=TRUE, format ="raster", bylayer=FALSE)
+  
+  
+  
+  
+  
+  
+  for (r in SSP){
+    
+    #start a raster stack for the first GCM
+    
+    gcm_one <- paste0("C:/Users/jonna/OneDrive/Dokument/R/Future/ensembles/presence/", i, "_", gcm1, "_", r,".tif")
+    all_gcm <- raster::stack(gcm_one)
+    
+    
+    
+    #Add remaining GCMs to the stack
+    
+    for (k in gcm3){
+      
+      gcm_rest <- paste0("C:/Users/jonna/OneDrive/Dokument/R/Future/ensembles/presence/", i, "_", k, "_", r,".tif")
+      
+      all_gcm <- addLayer(all_gcm,gcm_rest)
+      
+      }
+    
+    # Crop raster to the administrative boundries of West Africa
+    
+    all_gcm <- crop(all_gcm, extent(WA_countries)) 
+    all_gcm <- mask(all_gcm, WA_countries)
+    
+    
+    all_gcm_sum <- calc(all_gcm, fun=sum)
+    
+    # 3 GCMs need to agree in order to have a presence in a cell
+    all_gcm_sum[all_gcm_sum[] < 3 ] <- 0
+    all_gcm_sum[all_gcm_sum[] >= 3 ] <- 1 
+    
+    
+    
+    #Save final merged map
+    
+    writeRaster(all_gcm_sum, filename=paste0(i, "_Future_", r,".grd"), overwrite=TRUE, format ="raster", bylayer=FALSE)
+    
+    
+    print(freq(all_gcm_sum))
+    
+    
+    
+    cell_values[nrow(cell_values) + 1,] = c(i, r,freq(all_gcm_sum, value =0), freq(all_gcm_sum, value =1))
+    print (cell_values)
+    
+    
+    
+    
+      
+  }
+  
+}
+
+write_xlsx(cell_values,"Cell_values_individual_species.xlsx")
+
+
+#Create raster for baseline and SSPs with sum of presence of all species
+
+
+#Baseline scenario
+baseline_allspecies <- list.files (pattern="_Baseline.grd")
+baseline_allspecies <- raster::stack(baseline_allspecies)
+
+baseline_allspecies_sum <- calc(baseline_allspecies, fun=sum)
+writeRaster(baseline_allspecies_sum, filename=paste0("Baseline_allspecies.grd"), overwrite=TRUE, format ="raster", bylayer=FALSE)
+print(freq(baseline_allspecies_sum))
+
+
+#ssp126
+future_allspecies_ssp126 <- list.files (pattern=c( "_Future_ssp126.grd$"))
+future_allspecies_ssp126 <- raster::stack(future_allspecies_ssp126)
+  
+future_allspecies_sum_ssp126 <- calc(future_allspecies_ssp126, fun=sum)
+  
+writeRaster(future_allspecies_sum_ssp126, filename=paste0("_Future_allspecies_ssp126.grd"), overwrite=TRUE, format ="raster", bylayer=FALSE)
+  
+print(freq(future_allspecies_sum_ssp126))
+
+#ssp585
+future_allspecies_ssp585 <- list.files (pattern=c( "_Future_ssp585.grd$"))
+future_allspecies_ssp585 <- raster::stack(future_allspecies_ssp585)
+
+future_allspecies_sum_ssp585 <- calc(future_allspecies_ssp585, fun=sum)
+
+writeRaster(future_allspecies_sum_ssp585, filename=paste0("_Future_allspecies_ssp585.grd"), overwrite=TRUE, format ="raster", bylayer=FALSE)
+
+print(freq(future_allspecies_sum_ssp585))
+
+#cell_values_allspecies = c(freq(baseline_allspecies_sum), freq(future_allspecies_sum_ssp126), freq(future_allspecies_sum_ssp585))
+
+cell_values_allspecies_base = freq(baseline_allspecies_sum)
+
+cell_values_allspecies_ssp126 = freq(future_allspecies_sum_ssp126)
+
+cell_values_allspecies_ssp585  = freq(future_allspecies_sum_ssp585)
+
+print (cell_values_allspecies_base)
+print (cell_values_allspecies_ssp126)
+print (cell_values_allspecies_ssp585)
+
+
+
+
+
+
+
+
+
+
