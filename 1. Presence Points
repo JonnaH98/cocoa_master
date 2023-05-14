@@ -22,9 +22,9 @@ res <- occ_download(
 )), pred("hasCoordinate", TRUE), pred_within("POLYGON((-17 4, 15 4, 15 14, -17 14, -17 4))"), body = NULL,
 type = "and",
 format = "SIMPLE_CSV",
-user = "jonna98", 
-pwd = "gaYaqPg6aYjt_fJ", 
-email = "jonna.halonen98@gmail.com",
+user = "xxx", 
+pwd = "xxx", 
+email = "xxx",
 curlopts = list()
 ) 
 
@@ -35,18 +35,13 @@ res
 
 #Step 3: Step 2 will show you how to see the status of the download and when this is complete you can download using the following code:
 
-d <- occ_download_get('0184617-230224095556074') %>%
+d <- occ_download_get('xxx') %>%
   occ_download_import()
 
 
 #Note: Remember to save the citation info shown from GBIF when running the code
 
-#Citation Info:  
- # Please always cite the download DOI when using this data.
-#https://www.gbif.org/citation-guidelines
-#DOI: 10.15468/dl.gkxnqr
-#Citation:
- # GBIF Occurrence Download https://doi.org/10.15468/dl.gkxnqr Accessed from R via rgbif (https://github.com/ropensci/rgbif) on 2023-04-22
+
 
 
 
