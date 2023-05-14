@@ -1,13 +1,6 @@
 if(!require(terra)) install.packages("terra") else library(terra)
 if(!require(raster)) install.packages("raster") else library(raster)
 if(!require(BiodiversityR)) install.packages("BiodiversityR") else  library(BiodiversityR)
-if(!require(maxnet)) install.packages("maxnet") else library(maxnet)
-if(!require(maxlike)) install.packages("maxlike") else library(maxlike)
-if(!require(party)) install.packages("party") else library(party)
-if(!require(dismo)) install.packages("dismo") else library(dismo)
-if(!require(tidyverse)) install.packages("tidyverse") else library(tidyverse)
-if(!require(magrittr)) install.packages("magrittr") else library(magrittr)
-if(!require(sp)) install.packages("sp") else library(sp)
 if(!require(writexl)) install.packages("writexl") else library(writexl)
 
 
@@ -37,6 +30,7 @@ bioclim <- stack(bioclim)
 
 listofspecies <- sort(unique(coord$species))
 
+#Iterate over species and perform environmental filtering for each species
 
 filteredpoints = data.frame(matrix(nrow = 0, ncol = 3))
 
@@ -60,5 +54,5 @@ for (i in listofspecies ) {
   
 }
 
-
+#save filtered points
 write_xlsx(filteredpoints,"PresencePointsEnvFilter.xlsx")
