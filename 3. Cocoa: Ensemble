@@ -109,11 +109,7 @@ for (i in listofspecies) {
                                       SINK=TRUE,
                                       RASTER.species.name = i, 
                                       RASTER.stack.name="bioclim")
-  
-  save(ensemble_current,file = paste0("C:/Users/jonna/OneDrive/Dokument/R/wc2.1_2.5m_bio/models", i,"_current.RData") )
-  # write raster for GCMs for SSP126 and SSP585
-  
-  
+    
   print (i)
   print ("step 3 done")
   print(Sys.time())
