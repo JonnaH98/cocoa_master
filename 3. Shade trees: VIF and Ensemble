@@ -1,54 +1,9 @@
-
 if(!require(terra)) install.packages("terra") else library(terra)
 if(!require(raster)) install.packages("raster") else library(raster)
 if(!require(BiodiversityR)) install.packages("BiodiversityR") else  library(BiodiversityR)
-if(!require(maxnet)) install.packages("maxnet") else library(maxnet)
-if(!require(maxlike)) install.packages("maxlike") else library(maxlike)
-if(!require(party)) install.packages("party") else library(party)
-if(!require(dismo)) install.packages("dismo") else library(dismo)
-if(!require(gdalUtils)) install.packages("gdalUtils") else library(gdalUtils)
-if(!require(tidyverse)) install.packages("tidyverse") else library(tidyverse)
-if(!require(magrittr)) install.packages("magrittr") else library(magrittr)
-if(!require(sp)) install.packages("sp") else library(sp)
-if(!require(dismo)) install.packages("dismo") else library(dismo)
-if(!require(raster)) install.packages("raster") else library(raster)
-if(!require(maptools)) install.packages("maptools") else library(maptools)
-if(!require(rgeos)) install.packages("rgeos") else library(rgeos)
 if(!require(rJava)) install.packages("rJava") else library(rJava)
-if(!require(rgdal)) install.packages("rgdal") else library(rgdal)
-if(!require(geosphere)) install.packages("geosphere") else library(geosphere)
-if(!require(maps)) install.packages("maps") else  library(maps)
-if(!require(alphahull)) install.packages("alphahull") else library(alphahull)
-if(!require(tm)) install.packages("tm") else  library(tm)
-if(!require(maxent)) install.packages("maxent") else library(maxent)
-if(!require(gbm)) install.packages("gbm") else library(gbm)
-if(!require(gam)) install.packages("gam") else library(gam)
-if(!require(earth)) install.packages("earth") else library(earth)
-if(!require(vegan)) install.packages("vegan") else library(vegan)
-if(!require(MASS)) install.packages("MASS") else library(MASS)
-if(!require(mgcv)) install.packages("mgcv") else library(mgcv)
-if(!require(cluster)) install.packages("cluster") else library(cluster)
-if(!require(rpart)) install.packages("rpart") else  library(rpart)
-if(!require(effects)) install.packages("effects") else library(effects)
-if(!require(multcomp)) install.packages("multcomp") else library(multcomp)
-if(!require(ellipse)) install.packages("ellipse") else library(ellipse)
-if(!require(maptree)) install.packages("maptree") else library(maptree)
-if(!require(splancs)) install.packages("splancs") else library(splancs)
-if(!require(spatial)) install.packages("spatial") else library(spatial)
-if(!require(akima)) install.packages("akima") else library(akima)
-if(!require(nnet)) install.packages("nnet") else library(nnet)
-if(!require(randomForest)) install.packages("randomForest") else library(randomForest)
-if(!require(mda)) install.packages("mda") else library(mda)
-if(!require(kernlab)) install.packages("kernlab") else library(kernlab)
-if(!require(e1071)) install.packages("e1071") else library(e1071)
-if(!require(sem)) install.packages("sem") else library(sem)
-if(!require(car)) install.packages("car") else library(car)
-if(!require(maxlike)) install.packages("maxlike") else library(maxlike)
-if(!require(glmnet)) install.packages("glmnet") else library(glmnet)
-if(!require(PresenceAbsence)) install.packages("PresenceAbsence") else library(PresenceAbsence)
-if(!require(tcltk2)) install.packages("tcltk2") else library(tcltk2)
-if(!require(BiodiversityR)) install.packages("BiodiversityR") else  library(BiodiversityR)
 
+#This code follows the code structure of de Sousa et al (2019) for the ensemble modelling, not for the VIF
 #Read presence points
 setwd ("C:/Users/jonna/OneDrive/Dokument/R")           #########################################Change directory
 
@@ -101,7 +56,7 @@ for (i in listofspecies) {
   
   coordtemp = coord[coord$species == i,]
   
-  # step 1: 4-fold cross-validation
+  # step 1: 4-fold cross-validation for calibration
   
   step1 <- ensemble.calibrate.weights(x = bioclim, p = coordtemp[,c(2,3)], a = background[,c(2,3)],
                                           k=4,layer.drops=NULL, excludep = TRUE,
@@ -127,15 +82,12 @@ for (i in listofspecies) {
   print ("step 1 done")
   print(Sys.time())
   
-  
   # step 2: create models that will be used for the raster predictions
  
    # models with input.weights <0.05 are excluded
   output_weights <- step1$output.weights
   output_weights[output_weights < 0.05] <- 0
-  
-  
-  
+ 
   step2 <- ensemble.calibrate.models(x = bioclim, p = coordtemp[,c(2,3)], a = background[,c(2,3)],
                                          k=4, layer.drops=NULL,
                                          SINK=TRUE, species.name = i,
@@ -147,8 +99,7 @@ for (i in listofspecies) {
                                          PLOTS=FALSE, formulae.defaults=TRUE,
                                          GBMSTEP.learning.rate=0.002,
                                          models.save = TRUE)
-  
-  
+ 
   print (i)
   print ("step 2 done")
   print(Sys.time())
@@ -162,24 +113,19 @@ for (i in listofspecies) {
                                       RASTER.species.name = i, 
                                       RASTER.stack.name="bioclim")
   
-  save(ensemble_current,file = paste0("C:/Users/jonna/OneDrive/Dokument/R/wc2.1_2.5m_bio/models", i,"_current.RData") )
+
   # write raster for GCMs for SSP126 and SSP585
-  
   
   print (i)
   print ("step 3 done")
   print(Sys.time())
   
-  #gcm <- c("ACCESS-CM2","ACCESS-ESM1-5")
   gcm <- c("ACCESS-CM2",  "EC-Earth3-Veg", "EC-Earth3-Veg-LR", "IPSL-CM6A-LR")
-  
   SSP <- c("ssp126","ssp585")
-  
-  
+ 
   for (k in gcm){
       
       for (r in SSP){
-        
         
       #load GCM layers
         
@@ -190,32 +136,16 @@ for (i in listofspecies) {
       
       gcm_model <- gcm_model[[c(3,8,9,4,18,19,14,5, 13)]] #bioclim variables that passed VIF
       
-      
-      
       crs(gcm_model) <- myproj
       gcm_model <- crop(gcm_model, westafrica)
       gcm_model <- stack(gcm_model)
       
       future <- bioclim
       
-     # for (y in 1:nrow(future)){
-        
-     #   future[[y]] <- gcm_model [[y]]
-      #}
-     # 
+      for (y in 1:9){
+        future[[y]] <- gcm_model [[y]] #set future as the gcm_files
+      }
      
-    
-      
-      future[[1]] <- gcm_model[[1]] # overwrite climate projections
-      future[[2]] <- gcm_model[[2]] # overwrite climate projections
-      future[[3]] <- gcm_model[[3]] # overwrite climate projections
-      future[[4]] <- gcm_model[[4]] # overwrite climate projections
-      future[[5]] <- gcm_model[[5]] # overwrite climate projections
-      future[[6]] <- gcm_model[[6]] # overwrite climate projections
-      future[[7]] <- gcm_model[[7]] # overwrite climate projections
-      future[[8]] <- gcm_model[[8]] # overwrite climate projections
-      future[[9]] <- gcm_model[[9]] # overwrite climate projections
-      
       names(future) <- names(bioclim)
       
       ensemble_future <- ensemble.raster(xn = future,
@@ -225,8 +155,7 @@ for (i in listofspecies) {
                                         SINK = TRUE,
                                         RASTER.species.name = i, 
                                         RASTER.stack.name = paste(k,r,sep = "_"))
-      save(ensemble_future,file = paste0("C:/Users/jonna/OneDrive/Dokument/R/Future/models", i,"_future.RData") )
-   
+      
       print (r)
       print(Sys.time())
   print (i)
@@ -236,8 +165,7 @@ for (i in listofspecies) {
   
   
 }
-}
-  
+} 
 }
 
 
